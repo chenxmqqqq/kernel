@@ -13,16 +13,6 @@
 	model = "Radxa CM3 IO Board";
 	compatible = "radxa,cm3-io", "radxa,cm3", "rockchip,rk3566";
 
-	wireless_wlan: wireless-wlan {
-		compatible = "wlan-platdata";
-		rockchip,grf = <&grf>;
-		wifi_chip_type = "cm256sm";
-		pinctrl-names = "default";
-		pinctrl-0 = <&wifi_host_wake_l>;
-		WIFI,host_wake_irq = <&gpio2 RK_PC1 IRQ_TYPE_LEVEL_HIGH>;
-		status = "okay";
-	};
-
 	hdmi_sound: hdmi-sound {
 		status = "okay";
 		compatible = "rockchip,hdmi";
@@ -36,7 +26,7 @@
 	vcc5v0_usb30: vcc5v0-usb30-regulator {
 		compatible = "regulator-fixed";
 		enable-active-high;
-		gpio = <&gpio3 RK_PC2 GPIO_ACTIVE_HIGH>;
+		gpio = <&gpio0 RK_PA0 GPIO_ACTIVE_HIGH>;
 		pinctrl-names = "default";
 		pinctrl-0 = <&vcc5v0_usb30_en>;
 		regulator-name = "vcc5v0_usb30";
@@ -44,6 +34,18 @@
 		regulator-boot-on;
 	};
 
+	vcc5v0_usb20: vcc5v0-usb20-regulator {
+		compatible = "regulator-fixed";
+		enable-active-high;
+		gpio = <&gpio4 RK_PC5 GPIO_ACTIVE_HIGH>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&vcc5v0_usb20_en>;
+		regulator-name = "vcc5v0_usb20";
+		regulator-always-on;
+		regulator-boot-on;
+	};
+
+	#if 1
 	vcc_sd: sdmmc-regulator {
 		compatible = "regulator-fixed";
 		gpio = <&gpio0 RK_PA5 GPIO_ACTIVE_LOW>;
@@ -66,73 +68,25 @@
 		regulator-always-on;
 		regulator-boot-on;
 	};
+	#endif
 
-	rk817_sound: rk817-sound {
-		status = "okay";
-		compatible = "rockchip,multicodecs-card";
-		rockchip,card-name = "rockchip-rk817";
-		rockchip,format = "i2s";
-		rockchip,mclk-fs = <256>;
-		rockchip,cpu = <&i2s1_8ch>;
-		rockchip,codec = <&rk817_codec>;
-		poll-interval = <100>;
-		io-channels = <&saradc 2>;
-		io-channel-names = "adc-detect";
-		keyup-threshold-microvolt = <1800000>;
-		pinctrl-0 = <&hp_det>;
-		pinctrl-names = "default";
-		hp-det-gpio = <&gpio4 RK_PC4 GPIO_ACTIVE_HIGH>;
-		play-pause-key {
-			label = "playpause";
-			linux,code = <164>;
-			press-threshold-microvolt = <2000>;
-		};
-	};
-
+	#if 1
 	fan0: pwm-fan {
 		compatible = "pwm-fan";
 		#cooling-cells = <2>;
 		cooling-levels = <0 64 128 192 255>;
 		pwms = <&pwm0 0 10000 0>;
 	};
+	#endif
 
-	vcc_ch482d1: vcc-ch482d1 {
-		compatible = "regulator-fixed";
-		gpio = <&gpio3 RK_PC7 GPIO_ACTIVE_LOW>;
-		pinctrl-names = "default";
-		pinctrl-0 = <&ch482d_en1>;
-		regulator-name = "vcc_ch482d1";
-		regulator-always-on;
-		regulator-boot-on;
-		status = "okay";
-	};
-
-	vcc_ch482d2: vcc-ch482d2 {
-		compatible = "regulator-fixed";
-		gpio = <&gpio3 RK_PC6 GPIO_ACTIVE_LOW>;
-		pinctrl-names = "default";
-		pinctrl-0 = <&ch482d_en2>;
-		regulator-name = "vcc_ch482d2";
-		regulator-always-on;
-		regulator-boot-on;
-		status = "okay";
-	};
-
-};
-
-&gpio_leds {
-	pi-led-green {
-		gpio = <&gpio4 RK_PA4 GPIO_ACTIVE_LOW>;
-		linux,default-trigger = "heartbeat";
-		pinctrl-0 = <&pi_led>;
-	};
-
-	pwr-led-red {
-		gpio = <&gpio4 RK_PB7 GPIO_ACTIVE_LOW>;
-		linux,default-trigger = "default-on";
-		default-state = "on";
-		pinctrl-0 = <&pwr_led>;
-	};
+	watchdog_max6373: watchdog {
+        compatible = "linux,wdt-gpio";
+        gpios = <&gpio4 RK_PB7 GPIO_ACTIVE_HIGH>;
+        hw_algo = "toggle";
+        hw_margin_ms = <800>;
+        always-running;
+        status = "okay";
+    };
 };
 
 &i2s0_8ch {
@@ -145,7 +99,7 @@
 		     &i2s1m0_lrcktx
 		     &i2s1m0_sdi0
 		     &i2s1m0_sdo0>;
-	status = "okay";
+	status = "disabled";
 };
 
 &display_subsystem {
@@ -191,8 +145,23 @@
 	status = "okay";
 };
 
+&sdmmc1 {
+	status = "disabled";
+};
+
+&sdio_pwrseq {
+	status = "disabled";
+};
+
+&uart1 {
+	status = "disabled";
+
+	bluetooth {
+        status = "disabled";
+    };
+};
+
 &u2phy0_host {
-	phy-supply = <&vcc5v0_usb30>;
 	status = "okay";
 };
 
@@ -213,14 +182,22 @@
 };
 
 &pcie2x1 {
-	status = "okay";
+	status = "disabled";
 	reset-gpios = <&gpio1 RK_PB2 GPIO_ACTIVE_HIGH>;
 	vpcie3v3-supply = <&vcc3v3_sys>;
 	pinctrl-0 = <&pcie20m2_pins>;
 };
 
+&sata2 {
+	status = "okay";
+};
+
 &pwm0 {
 	pinctrl-0 = <&pwm0m1_pins>;
+	status = "okay";
+};
+
+&i2c1{
 	status = "okay";
 };
 
@@ -236,6 +213,52 @@
 		#clock-cells = <0>;
 		clock-frequency = <32768>;
 		clock-output-names = "hym8563";
+	};
+
+	atecc608a@60 {
+        compatible = "atmel,atecc508a";
+        reg = <0x60>;
+        status = "okay";
+    };
+};
+
+&uart7 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart7m2_xfer>;
+};
+
+&spi1 {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-names = "default", "high_speed";
+	pinctrl-0 = <&spi1m1_cs0 &spi1m1_pins>;
+	pinctrl-1 = <&spi1m1_cs0 &spi1m1_pins_hs>;
+	max-freq = <50000000>;
+
+	spidev@0 {
+		compatible = "rockchip,spidev";
+		status = "okay";
+		reg = <0>;
+		spi-max-frequency = <50000000>;
+	};
+};
+
+&spi3 {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-names = "default", "high_speed";
+	pinctrl-0 = <&spi3m0_cs0 &spi3m0_pins>;
+	pinctrl-1 = <&spi3m0_cs0 &spi3m0_pins_hs>;
+	max-freq = <50000000>;
+
+	spidev@0 {
+		compatible = "rockchip,spidev";
+		status = "okay";
+		reg = <0>;
+		spi-max-frequency = <50000000>;
 	};
 };
 
@@ -268,29 +291,18 @@
 };
 
 &pinctrl {
-	headphone {
-		hp_det: hp-det {
-			rockchip,pins = <4 RK_PC4 RK_FUNC_GPIO &pcfg_pull_up>;
-		};
-	};
-
 	usb {
 		vcc5v0_usb30_en: vcc5v0-host-en {
-			rockchip,pins = <3 RK_PC2 RK_FUNC_GPIO &pcfg_pull_none>;
-		};
-	};
-
-	leds {
-		pi_led: pi-led{
-			rockchip,pins = <4 RK_PA4 RK_FUNC_GPIO &pcfg_pull_none>;
+			rockchip,pins = <0 RK_PA0 RK_FUNC_GPIO &pcfg_pull_none>;
 		};
 
-		pwr_led: pwr-led{
-			rockchip,pins = <4 RK_PB7 RK_FUNC_GPIO &pcfg_pull_none>;
+		vcc5v0_usb20_en: vcc5v0-usb20host-en {
+			rockchip,pins = <4 RK_PC5 RK_FUNC_GPIO &pcfg_pull_none>;
 		};
 	};
 
 	sdcard {
+		#if 1
 		sdmmc_pwren: sdmmc-pwren {
 			rockchip,pins = <0 RK_PA5 RK_FUNC_GPIO &pcfg_pull_none>;
 		};
@@ -298,16 +310,7 @@
 		tf_det_en: tf-det-en {
 			rockchip,pins = <0 RK_PD4 RK_FUNC_GPIO &pcfg_output_low>;
 		};
-	};
-
-	ch482d {
-		ch482d_en1: ch482d-en1 {
-			rockchip,pins = <3 RK_PC7 RK_FUNC_GPIO &pcfg_pull_none>;
-		};
-
-		ch482d_en2: ch482d-en2 {
-			rockchip,pins = <3 RK_PC6 RK_FUNC_GPIO &pcfg_pull_none>;
-		};
+		#endif
 	};
 
 	gmac1 {
