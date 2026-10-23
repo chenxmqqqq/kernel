@@ -5,7 +5,7 @@
  *
  * Custom carrier for an unmodified Radxa CM3, pin requirements revision 2.
  * GPIO0_B1/B2 are the module's PMIC I2C bus and GPIO0_A2 is PMIC_SLEEP.
- * The requested OTG VBUS enable, SYS_LED1 and SYS_LED2 need new wiring.
+ * OTG VBUS enable and SYS_LED1/2 are wired to TCA9534 P0/P1/P2 on I2C1.
  */
 
 /dts-v1/;
@@ -37,6 +37,22 @@
 		rockchip,jack-det;
 	};
 
+	leds {
+		compatible = "gpio-leds";
+
+		led-1 {
+			label = "SYS_LED1";
+			gpios = <&tca9534 1 GPIO_ACTIVE_HIGH>;
+			default-state = "off";
+		};
+
+		led-2 {
+			label = "SYS_LED2";
+			gpios = <&tca9534 2 GPIO_ACTIVE_HIGH>;
+			default-state = "off";
+		};
+	};
+
 	/* SD power switch polarity follows the supplied RC119 reference. */
 	vcc_sd: sdmmc-regulator {
 		compatible = "regulator-fixed";
@@ -48,6 +64,16 @@
 		regulator-max-microvolt = <3300000>;
 		startup-delay-us = <100000>;
 		vin-supply = <&vcc3v3_sys>;
+	};
+
+	vcc5v0_otg: vcc5v0-otg-regulator {
+		compatible = "regulator-fixed";
+		enable-active-high;
+		gpio = <&tca9534 0 GPIO_ACTIVE_HIGH>;
+		regulator-name = "vcc5v0_otg";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		vin-supply = <&vcc5v0_sys>;
 	};
 
 	vcc5v0_usb2: vcc5v0-usb2-regulator {
@@ -129,6 +155,19 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&i2c1_xfer>;
 	status = "okay";
+
+	tca9534: gpio@20 {
+		/* TCA9534 uses the PCA9534 register layout. */
+		compatible = "nxp,pca9534";
+		reg = <0x20>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		gpio-line-names = "TCA9534_P0", "TCA9534_P1",
+				  "TCA9534_P2", "TCA9534_P3",
+				  "TCA9534_P4", "TCA9534_P5",
+				  "TCA9534_P6", "TCA9534_P7";
+		status = "okay";
+	};
 };
 
 &i2c2 {
@@ -255,6 +294,11 @@
 	status = "okay";
 };
 
+&u2phy0_otg {
+	vbus-supply = <&vcc5v0_otg>;
+	status = "okay";
+};
+
 &u2phy1_otg {
 	phy-supply = <&vcc5v0_usb2>;
 	status = "okay";
@@ -279,8 +323,7 @@
 };
 
 &usbdrd_dwc3 {
-	/* GPIO0_B1 is I2C0_SCL: OTG host power needs a different GPIO. */
-	dr_mode = "peripheral";
+	dr_mode = "otg";
 };
 
 &usbhost30 {
