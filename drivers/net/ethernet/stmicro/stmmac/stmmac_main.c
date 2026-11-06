@@ -7646,16 +7646,16 @@ int stmmac_resume(struct device *dev)
 	}
 
 	rtnl_lock();
-	if (device_may_wakeup(priv->device) && priv->plat->pmt) {
-		phylink_resume(priv->phylink);
-	} else {
-		phylink_resume(priv->phylink);
-		if (device_may_wakeup(priv->device))
-			phylink_speed_up(priv->phylink);
+	/* Restore RXC for the DMA reset without starting the PHY state machine. */
+	if (ndev->phydev && ndev->phydev->suspended) {
+		ret = phy_resume(ndev->phydev);
+		if (ret) {
+			dev_err(dev, "Failed to resume PHY: %d\n", ret);
+			rtnl_unlock();
+			return ret;
+		}
 	}
-	rtnl_unlock();
 
-	rtnl_lock();
 	mutex_lock(&priv->lock);
 
 	stmmac_reset_queues_param(priv);
@@ -7673,6 +7673,12 @@ int stmmac_resume(struct device *dev)
 	stmmac_enable_all_dma_irq(priv);
 
 	mutex_unlock(&priv->lock);
+
+	/* PHY work can access MDIO immediately; keep it after the MAC reset. */
+	phylink_resume(priv->phylink);
+	if (device_may_wakeup(priv->device) && !priv->plat->pmt)
+		phylink_speed_up(priv->phylink);
+
 	rtnl_unlock();
 
 	netif_device_attach(ndev);
